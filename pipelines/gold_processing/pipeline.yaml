@@ -1,0 +1,7 @@
+pipeline:
+  name: gold_processing
+  layer: gold
+  engine: serverless_pyspark_or_declarative
+  publish_validated_only: true
+  exclude_raw_conversation_text: true
+  reconciliation_required: true

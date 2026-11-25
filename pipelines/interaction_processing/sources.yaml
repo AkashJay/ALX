@@ -1,0 +1,5 @@
+sources:
+  - table: silver.conversations
+  - table: silver.messages
+  - target: silver.interactions
+  - target: silver.interaction_message_bridge

@@ -1,0 +1,7 @@
+sources:
+  - table: bronze.conversations_raw
+    target: silver.conversations
+  - table: bronze.messages_raw
+    target: silver.messages
+  - table: bronze.feedback_raw
+    target: silver.feedback

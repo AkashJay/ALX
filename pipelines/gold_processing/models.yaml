@@ -1,0 +1,18 @@
+facts:
+  fact_conversation: {grain: conversation_id}
+  fact_message: {grain: message_id}
+  fact_interaction: {grain: interaction_id}
+dimensions:
+  - dim_date
+  - dim_technician
+  - dim_equipment
+  - dim_topic
+  - dim_intent
+bridges:
+  - bridge_interaction_topic
+metrics:
+  - conversation_count
+  - message_count
+  - eligible_interaction_count
+  - clarification_rate
+  - topic_interaction_count

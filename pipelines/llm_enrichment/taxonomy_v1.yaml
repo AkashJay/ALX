@@ -1,0 +1,17 @@
+taxonomy_version: v1
+# Illustrative seed only; production labels require domain-owner approval.
+intents:
+  - troubleshooting
+  - operational_guidance
+  - information_request
+  - procedure_clarification
+  - unknown
+candidate_guidance_issue:
+  - NONE
+  - REVIEW_REQUIRED
+unknown_policy: allow_null
+topics:
+  - overheating
+equipment:
+  - hydraulic pump
+components: []

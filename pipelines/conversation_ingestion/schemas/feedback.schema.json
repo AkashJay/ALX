@@ -1,0 +1,51 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Illustrative feedback event schema",
+  "type": "object",
+  "required": [
+    "record_id",
+    "source_updated_at",
+    "operation",
+    "exported_at",
+    "schema_version",
+    "source_revision"
+  ],
+  "properties": {
+    "feedback_id": {
+      "type": "string"
+    },
+    "conversation_id": {
+      "type": "string"
+    },
+    "created_at": {
+      "type": "string"
+    },
+    "record_id": {
+      "type": "string"
+    },
+    "source_updated_at": {
+      "type": "string"
+    },
+    "operation": {
+      "enum": [
+        "UPSERT",
+        "DELETE"
+      ]
+    },
+    "exported_at": {
+      "type": "string"
+    },
+    "schema_version": {
+      "enum": [
+        1,
+        "1"
+      ]
+    },
+    "source_revision": {
+      "type": "integer",
+      "minimum": 1
+    }
+  },
+  "additionalProperties": true,
+  "description": "Illustrative only; refine per approved producer contract; DELETE events may omit non-key attributes."
+}

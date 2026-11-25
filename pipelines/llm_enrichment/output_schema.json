@@ -1,0 +1,98 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "EquipRAG Interaction Enrichment Output v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "topic",
+    "intent",
+    "equipment",
+    "component",
+    "reported_symptoms",
+    "clarification_requested",
+    "follow_up_present",
+    "resolution_confirmed_by_conversation",
+    "candidate_guidance_issue",
+    "evidence"
+  ],
+  "properties": {
+    "topic": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "intent": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "equipment": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "component": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "reported_symptoms": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "clarification_requested": {
+      "type": [
+        "boolean",
+        "null"
+      ]
+    },
+    "follow_up_present": {
+      "type": [
+        "boolean",
+        "null"
+      ]
+    },
+    "resolution_confirmed_by_conversation": {
+      "type": [
+        "boolean",
+        "null"
+      ]
+    },
+    "candidate_guidance_issue": {
+      "type": "string",
+      "enum": [
+        "NONE",
+        "REVIEW_REQUIRED"
+      ]
+    },
+    "evidence": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "claim",
+          "message_id",
+          "excerpt"
+        ],
+        "properties": {
+          "claim": {
+            "type": "string"
+          },
+          "message_id": {
+            "type": "string"
+          },
+          "excerpt": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  }
+}

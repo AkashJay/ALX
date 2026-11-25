@@ -1,0 +1,20 @@
+project: equiprag_system2
+schedule:
+  timezone: UTC
+  cron: "0 0 * * * ?"  # hourly Quartz; validate syntax/Databricks settings on deployment
+processing:
+  dry_run: true
+  max_records_per_batch: 1000
+  fail_on_unknown_source_schema: true
+storage:
+  landing_root: "${ADLS_LANDING_ROOT}"
+  catalog: "${UC_CATALOG}"
+  schemas:
+    bronze: bronze
+    silver: silver
+    enrichment: enrichment
+    gold: gold
+    ops: ops
+security:
+  redact_text_before_llm: true
+  allow_raw_transcripts_in_gold: false

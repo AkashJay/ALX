@@ -1,0 +1,8 @@
+sources:
+  - table: silver.conversations
+  - table: silver.messages
+  - table: silver.interactions
+  - table: enrichment.validation_results
+  - target: gold.fact_conversation
+  - target: gold.fact_message
+  - target: gold.fact_interaction

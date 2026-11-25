@@ -1,0 +1,19 @@
+sources:
+  - name: conversations
+    type: adls_gen2
+    format: jsonl
+    relative_path: conversations/
+    schema: schemas/conversations.schema.json
+    target: bronze.conversations_raw
+  - name: messages
+    type: adls_gen2
+    format: jsonl
+    relative_path: messages/
+    schema: schemas/messages.schema.json
+    target: bronze.messages_raw
+  - name: feedback
+    type: adls_gen2
+    format: jsonl
+    relative_path: feedback/
+    schema: schemas/feedback.schema.json
+    target: bronze.feedback_raw

@@ -1,0 +1,21 @@
+pipeline:
+  name: llm_enrichment
+  layer: enrichment
+  engine: serverless_python_job
+  enabled: true
+  request_batch_size: 100
+  max_concurrency: 4
+  max_attempts: 3
+  prompt_version: v1
+  output_schema_version: v1
+  taxonomy_version: v1
+  provider: azure_openai
+  model_deployment: "${AZURE_OPENAI_DEPLOYMENT}"
+  require_message_evidence: true
+  publish_only_validated: true
+  model_deployment_revision: mock-v1
+  requests_per_minute: 30
+  tokens_per_minute: 150000
+  max_input_chars: 12000
+  max_output_tokens: 1500
+  lease_seconds: 300

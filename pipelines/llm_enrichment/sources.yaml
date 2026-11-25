@@ -1,0 +1,9 @@
+sources:
+  - table: silver.interactions
+  - table: silver.interaction_message_bridge
+  - table: silver.messages
+  - file: prompts/enrich_interaction_v1.md
+  - schema: pipelines/llm_enrichment/output_schema.json
+  - target: enrichment.requests
+  - target: enrichment.candidates
+  - target: enrichment.validation_results

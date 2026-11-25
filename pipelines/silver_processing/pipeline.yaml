@@ -1,0 +1,7 @@
+pipeline:
+  name: silver_processing
+  layer: silver
+  engine: lakeflow_sdp_or_serverless_job
+  change_precedence: source_revision_then_timestamp
+  on_ambiguous_revision: quarantine
+  delete_semantics: tombstone

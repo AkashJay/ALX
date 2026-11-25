@@ -1,0 +1,5 @@
+environment: prod
+# All storage account, catalog, endpoint and identity references are injected by deployment.
+# Set ADLS_LANDING_ROOT, UC_CATALOG and Azure OpenAI deployment settings outside source control.
+processing:
+  dry_run: false

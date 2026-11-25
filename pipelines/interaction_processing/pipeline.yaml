@@ -1,0 +1,7 @@
+pipeline:
+  name: interaction_processing
+  layer: silver
+  engine: serverless_python_job
+  use_turn_id_when_trustworthy: true
+  ambiguous_policy: review_required
+  invalidate_on_source_hash_change: true

@@ -1,0 +1,7 @@
+pipeline:
+  name: conversation_ingestion
+  layer: bronze
+  mode: incremental_files
+  engine: lakeflow_sdp
+  checkpoint_policy: managed_per_feed
+  quarantine_on_invalid: true
