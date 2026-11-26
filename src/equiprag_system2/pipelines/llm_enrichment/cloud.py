@@ -9,7 +9,7 @@ from equiprag_system2.common.delta import DeltaStore
 from equiprag_system2.common.state import dumps
 from equiprag_system2.pipelines.llm_enrichment.delta_ledger import DeltaLedger
 from equiprag_system2.pipelines.llm_enrichment.providers import ProviderError, minimize
-from equiprag_system2.pipelines.llm_enrichment.validation import validate
+from equiprag_system2.pipelines.llm_enrichment.validation import validate, validation_status
 
 
 def pending(store: DeltaStore) -> list[dict]:
@@ -101,7 +101,9 @@ def enrich(
     return processed
 
 
-def validate_results(store: DeltaStore, run_id: str, schema: dict, taxonomy: dict) -> None:
+def validate_results(
+    store: DeltaStore, run_id: str, schema: dict, taxonomy: dict, *, max_attempts: int
+) -> None:
     ledger = DeltaLedger(store)
     for scope in store.get("worksets", run_id)["scopes"]:
         for row in store.rows("requests", scopes=[scope]):
@@ -112,5 +114,14 @@ def validate_results(store: DeltaStore, run_id: str, schema: dict, taxonomy: dic
                 value["candidate"]["output"], minimize(value["input"]), schema, taxonomy
             )
             value["validation"] = errors
-            ledger._transition(value, "REVIEW_REQUIRED" if errors else "VALIDATED")
+            value["error"] = "OUTPUT_VALIDATION_FAILED" if errors else None
+            value["next_attempt"] = time.time() + min(60, 2 ** value["attempts"]) if errors else 0
+            value.setdefault("validation_attempts", []).append(
+                {
+                    "attempt": value["attempts"],
+                    "candidate": value["candidate"],
+                    "errors": errors,
+                }
+            )
+            ledger._transition(value, validation_status(errors, value["attempts"], max_attempts))
             store.compare_swap("requests", row["key"], row["token"], value)

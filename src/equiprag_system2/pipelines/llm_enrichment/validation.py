@@ -28,6 +28,9 @@ def validate(candidate: dict, supplied: dict, schema: dict, taxonomy: dict) -> l
     for claim, value in candidate.items():
         if claim in ("evidence", "candidate_guidance_issue") or value is None or value == []:
             continue
+        # False denotes absence in this supplied episode, not a positive quoted event.
+        if value is False:
+            continue
         if claim not in evidence:
             errors.append("MISSING_CLAIM_EVIDENCE")
         if claim in ("topic", "equipment", "component", "reported_symptoms"):
@@ -37,9 +40,21 @@ def validate(candidate: dict, supplied: dict, schema: dict, taxonomy: dict) -> l
                     item.casefold() in e["excerpt"].casefold() for e in evidence.get(claim, [])
                 ):
                     errors.append("UNSUPPORTED_LITERAL_CLAIM")
-    # A matching quote cannot prove entailment. Resolution always requires review in v1.
-    if candidate["resolution_confirmed_by_conversation"] is True:
-        errors.append("RESOLUTION_REQUIRES_REVIEW")
-    if candidate["candidate_guidance_issue"] == "REVIEW_REQUIRED":
-        errors.append("GUIDANCE_REQUIRES_REVIEW")
+    # Positive resolution is a user-reported statement, never verified physical repair.
+    if candidate["resolution_confirmed_by_conversation"] is True and not any(
+        messages[e["message_id"]]["role"] == "user"
+        for e in evidence.get("resolution_confirmed_by_conversation", [])
+    ):
+        errors.append("RESOLUTION_REQUIRES_USER_EVIDENCE")
+    if candidate["candidate_guidance_issue"] == "REVIEW_REQUIRED" and not evidence.get(
+        "candidate_guidance_issue"
+    ):
+        errors.append("MISSING_CLAIM_EVIDENCE")
     return sorted(set(errors))
+
+
+def validation_status(errors: list[str], attempts: int, max_attempts: int) -> str:
+    """No human approval state: bounded regeneration or terminal extraction failure."""
+    if not errors:
+        return "VALIDATED"
+    return "RETRYABLE_FAILED" if attempts < max_attempts else "VALIDATION_FAILED"

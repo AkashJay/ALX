@@ -29,6 +29,8 @@ def publish(silver: dict, interactions: list[dict], validated: dict) -> dict:
                         "intent",
                         "equipment",
                         "component",
+                        "candidate_guidance_issue",
+                        "reported_symptoms",
                         "clarification_requested",
                         "follow_up_present",
                         "resolution_confirmed_by_conversation",

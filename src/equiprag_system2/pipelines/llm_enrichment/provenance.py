@@ -31,6 +31,6 @@ def build_provenance(
         schema_hash=digest(schema),
         taxonomy_hash=digest(taxonomy),
         transform_version="v1",
-        validator_version="v1",
+        validator_version="v2",
     )
     return value

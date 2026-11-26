@@ -90,7 +90,7 @@ def execute(
     store.initialize()
     schema = json.loads((root / "pipelines/llm_enrichment/output_schema.json").read_text())
     taxonomy = yaml.safe_load((root / "pipelines/llm_enrichment/taxonomy_v1.yaml").read_text())
-    prompt = (root / "prompts/enrich_interaction_v1.md").read_text()
+    prompt = (root / "prompts/enrich_interaction_v2.md").read_text()
     cfg = cfg.model_copy(
         update={
             "request_overhead_chars": len(prompt)
@@ -145,7 +145,7 @@ def execute(
                 adapter = AzureProvider(**arguments, api_version=api_version)
             enrich(store, cfg, adapter, run_id, provenance=provenance)
         elif task == "validate":
-            validate_results(store, run_id, schema, taxonomy)
+            validate_results(store, run_id, schema, taxonomy, max_attempts=cfg.max_attempts)
         elif task == "gold":
             for scope in store.get("worksets", run_id)["scopes"]:
                 episodes = store.get("episode_state", scope, {"interactions": []})["interactions"]

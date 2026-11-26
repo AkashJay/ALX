@@ -57,7 +57,7 @@ def run(
     )
     schema = json.loads((root / "pipelines/llm_enrichment/output_schema.json").read_text())
     taxonomy = yaml.safe_load((root / "pipelines/llm_enrichment/taxonomy_v1.yaml").read_text())
-    prompt = (root / "prompts/enrich_interaction_v1.md").read_text()
+    prompt = (root / "prompts/enrich_interaction_v2.md").read_text()
     cfg = cfg.model_copy(
         update={
             "request_overhead_chars": len(prompt)

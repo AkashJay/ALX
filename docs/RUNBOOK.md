@@ -100,8 +100,8 @@ candidate interpretations, never verified equipment outcomes. Clarification deno
 includes only non-null clarification flags; zero denominator yields null, not zero.
 Topic counts use DISTINCT interaction IDs. Do not join message and topic bridges directly
 and sum facts. Technician keys are hashed from already pseudonymous source identifiers;
-this is not anonymization of real identities. Potential guidance concerns and resolution
-assertions enter review. No automatic manual-review approval workflow is implemented.
+this is not anonymization of real identities. Evidence-valid guidance concerns and user-reported resolution
+are published as unverified interpretations. No human approval workflow is required.
 The AI quality evaluation table is schema-only. Agent version is omitted without a
 trustworthy source attribute. Publication timestamp is retained for freshness monitoring.
 
@@ -141,3 +141,14 @@ Record the affected scope, lineage versions, recovery action and validation evid
 - [Fixed-schema JSON parsing and Auto Loader text ingestion](https://learn.microsoft.com/en-us/azure/databricks/ldp/from-json-schema-evolution)
 - [Azure structured outputs](https://learn.microsoft.com/en-us/azure/foundry/openai/how-to/structured-outputs)
 Documentation review is not deployment validation. No preview schema inference is used.
+
+
+## Automated extraction policy v2
+ADR-012 supersedes prior human-review publication gates for extracted interpretations.
+VALIDATED candidates publish automatically, including evidence-supported guidance concern
+flags. REVIEW_REQUIRED remains a legacy model attribute only. Extraction validation
+failures retry on later passes with backoff and the shared max_attempts budget, then end
+as VALIDATION_FAILED. Do not manually change failed statuses to VALIDATED. Investigate
+systemic failures through validation reasons and versioned prompt/contract changes.
+Migration: pull prompt v2 and code, reinstall/restart, use a fresh run_id and replay all
+stages with the same checkpoints. Requests supersedes old identities; audit updates views.

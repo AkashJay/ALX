@@ -131,5 +131,10 @@ class Ledger:
                 ),
             ).rowcount
             if changed:
+                if candidate is not None:
+                    self.state.put(
+                        "candidate_attempt:" + claim["key"] + ":" + str(claim["attempts"]),
+                        {"candidate": candidate, "validation": errors or [], "status": status},
+                    )
                 self.transition(claim["key"], status, now, error)
             return bool(changed)

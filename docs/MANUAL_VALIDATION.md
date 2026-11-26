@@ -107,6 +107,31 @@ or request history. Only one writer may operate the target.
 
 Run enrich, then inspect candidate/status/attempts; run validate and inspect validation
 reasons before Gold. A normal completion and valid JSON do not prove evidence validity.
-Real outputs can enter REVIEW_REQUIRED. Confirm the full schema is accepted in the actual
+Invalid outputs enter bounded retries and then VALIDATION_FAILED if exhausted. Confirm the full schema is accepted in the actual
 workspace; the earlier equipment-only smoke test did not test that contract. Run Gold and
-audit only after reviewing those outcomes, then verify counts and unchanged replay.
+audit to publish valid interactions, then verify counts and unchanged replay.
+
+
+## Automated validation v2 migration
+
+No human approval is required. The guidance attribute's legacy REVIEW_REQUIRED value
+means an unverified conversation concern; evidence-valid concerns are published in Gold.
+False booleans mean not observed in the supplied episode, null means indeterminate, and
+true requires source evidence. Gold now includes candidate_guidance_issue and
+reported_symptoms. These are interpretations, not verified equipment conditions.
+
+After pulling this update, force reinstall the package without cached build/dependencies,
+restart Python, and create a fresh manual session/run_id with unchanged model settings
+and checkpoints. Replay all stages in order. Prompt/validator v2 gives new request
+identities; old candidates remain historical and are superseded, not silently approved.
+The updated prompt file must be committed/pulled with the code. Audit replaces the Gold
+views to expose the new columns. Existing publications show null in those columns until
+republished. No notebook edits are needed for this update.
+
+Schema, taxonomy and evidence failures become RETRYABLE_FAILED while attempts remain;
+a later full pipeline pass after backoff automatically retries. The current cap is three
+total attempts per request identity, shared with transport retries. Exhausted extraction
+failures become VALIDATION_FAILED and stay out of enriched Gold; valid interactions and
+conversation/message facts still publish. The manual workflow needs another manual pass;
+future scheduled jobs perform those passes automatically. No scheduling was added here.
+Failed candidate attempts and validation reasons remain in restricted audit state.

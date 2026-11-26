@@ -8,7 +8,8 @@ FACTS = {
     "fact_message": "message_id STRING,conversation_id STRING,role STRING,date_key STRING",
     "fact_interaction": "interaction_id STRING,source_content_hash STRING,conversation_id STRING,"
     "date_key STRING,request_key STRING,topic STRING,intent STRING,"
-    "equipment STRING,component STRING,clarification_requested BOOLEAN,"
+    "equipment STRING,component STRING,candidate_guidance_issue STRING,"
+    "reported_symptoms ARRAY<STRING>,clarification_requested BOOLEAN,"
     "follow_up_present BOOLEAN,resolution_confirmed_by_conversation BOOLEAN",
     "dim_date": "date_key STRING",
     "dim_technician": "technician_key STRING",

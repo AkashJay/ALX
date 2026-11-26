@@ -69,3 +69,19 @@ hash in request provenance so switching providers supersedes old requests. This 
 request identities once for existing runs; replay requests before enrichment. A supplied
 model revision is an operator label, not proof that a hosted model alias is immutable.
 The smoke response is not full-schema or end-to-end pipeline acceptance.
+
+## ADR-012 — Automated extraction validation, no human publication gate
+User explicitly requires automated analytics without a manual approver. This supersedes
+ADR-007's automatic review gates for guidance concerns and reported resolution. A guidance
+concern remains an unverified model interpretation, published only with valid source
+references. The existing output value REVIEW_REQUIRED is retained for compatibility as a
+conversation attribute; it never assigns a review task. Request statuses use VALIDATED,
+RETRYABLE_FAILED or VALIDATION_FAILED for extraction validation, not REVIEW_REQUIRED.
+Boolean false means the event is not observed in the supplied episode (not proof it never
+happened). It needs no positive excerpt. Null means indeterminate; true requires source
+quotes, and reported resolution must cite a user message. Quoted evidence establishes
+traceability, not semantic entailment or domain truth. Other schema/taxonomy/evidence
+checks remain. Failed extraction is retried on later pipeline passes after backoff under
+the existing shared attempt/rate limits; exhaustion is terminal VALIDATION_FAILED. Valid
+interactions continue to publish. Preserve failed candidate attempts for audit. Revision
+changes create new identities and supersede old review statuses through normal replay.

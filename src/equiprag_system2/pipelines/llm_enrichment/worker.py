@@ -13,7 +13,7 @@ from equiprag_system2.pipelines.llm_enrichment.providers import (
     Response,
     minimize,
 )
-from equiprag_system2.pipelines.llm_enrichment.validation import validate
+from equiprag_system2.pipelines.llm_enrichment.validation import validate, validation_status
 
 
 def process(
@@ -76,7 +76,7 @@ def process(
                     errors = validate(response.candidate, supplied, schema, taxonomy)
                     ledger.finish(
                         claim,
-                        "REVIEW_REQUIRED" if errors else "VALIDATED",
+                        validation_status(errors, claim["attempts"], config.max_attempts),
                         candidate={
                             "output": response.candidate,
                             "usage": response.usage,
@@ -84,6 +84,8 @@ def process(
                             "latency_seconds": latency,
                         },
                         errors=errors,
+                        error="OUTPUT_VALIDATION_FAILED" if errors else None,
+                        delay=min(60, 2 ** claim["attempts"]) if errors else 0,
                     )
                 processed += 1
     return processed
