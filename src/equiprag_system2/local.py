@@ -14,11 +14,12 @@ from equiprag_system2.common.config_loader import (
     load,
     pipeline_config,
 )
-from equiprag_system2.common.state import State, digest, dumps
+from equiprag_system2.common.state import State, dumps
 from equiprag_system2.pipelines.conversation_ingestion.local import ingest
 from equiprag_system2.pipelines.gold_processing.transform import publish
 from equiprag_system2.pipelines.interaction_processing.transform import build
 from equiprag_system2.pipelines.llm_enrichment.ledger import Ledger
+from equiprag_system2.pipelines.llm_enrichment.provenance import build_provenance
 from equiprag_system2.pipelines.llm_enrichment.providers import MockProvider, Provider
 from equiprag_system2.pipelines.llm_enrichment.worker import process
 from equiprag_system2.pipelines.silver_processing.transform import canonicalize
@@ -64,22 +65,7 @@ def run(
             + len(json.dumps(taxonomy))
         }
     )
-    provenance = {
-        k: getattr(cfg, k)
-        for k in (
-            "prompt_version",
-            "output_schema_version",
-            "taxonomy_version",
-            "model_deployment_revision",
-        )
-    }
-    provenance.update(
-        prompt_hash=digest(prompt),
-        schema_hash=digest(schema),
-        taxonomy_hash=digest(taxonomy),
-        transform_version="v1",
-        validator_version="v1",
-    )
+    provenance = build_provenance(cfg, prompt, schema, taxonomy)
     run_id, start = str(uuid.uuid4()), time.time()
     try:
         ingested = ingest(state, Path(settings.storage.landing_root), root)

@@ -80,7 +80,7 @@ class EnrichmentSettings(Strict):
     prompt_version: str
     output_schema_version: str
     taxonomy_version: str
-    provider: Literal["mock", "azure_openai"]
+    provider: Literal["mock", "azure_openai", "databricks"]
     model_deployment: str
     model_deployment_revision: str = "mock-v1"
     require_message_evidence: Literal[True]

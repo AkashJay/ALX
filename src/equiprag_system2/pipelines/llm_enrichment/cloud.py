@@ -27,14 +27,19 @@ def pending(store: DeltaStore) -> list[dict]:
     ]
 
 
-def enrich(store: DeltaStore, cfg: EnrichmentSettings, provider, run_id: str) -> int:
+def enrich(
+    store: DeltaStore, cfg: EnrichmentSettings, provider, run_id: str, *, provenance: dict
+) -> int:
     if not cfg.enabled:
         return 0
     ledger = DeltaLedger(store)
     work = store.get("worksets", run_id, {"scopes": [], "ends": {}})
     budget = store.get("budgets", "inference", {"minute": 0, "requests": 0, "tokens": 0})
     processed, failures = 0, 0
-    queue = pending(store)[: cfg.request_batch_size]
+    queue = pending(store)
+    if any(row["payload"].get("provenance") != provenance for row in queue):
+        raise ValueError("Pending inference provenance differs; rerun requests before enrichment")
+    queue = queue[: cfg.request_batch_size]
 
     def call(row):
         supplied = minimize(row["payload"]["input"])

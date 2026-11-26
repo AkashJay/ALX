@@ -57,3 +57,15 @@ Dev schema mappings use equiprag_bronze, equiprag_silver, equiprag_enrichment, e
 and equiprag_ops. Workspace/catalog/volume paths remain runtime parameters, not customer
 paths in source code. Production Azure ingestion remains unchanged; mock validation on
 Free Edition does not validate Azure identity, ADLS or live inference.
+
+## ADR-011 — Databricks hosted inference for manual dev validation
+The user selected a hosted Databricks model and verified a strict JSON smoke response.
+Permit provider=databricks only in dev as an alternative to mock for synthetic manual
+validation. Production remains Azure OpenAI. Reuse the bounded worker, strict output
+contract, minimization and evidence/taxonomy validation. Runtime notebook credentials
+stay outside serialized configuration and widgets. Accept only HTTPS Databricks gateway
+URLs; no embedded credentials or query strings. Record provider, deployment and endpoint
+hash in request provenance so switching providers supersedes old requests. This changes
+request identities once for existing runs; replay requests before enrichment. A supplied
+model revision is an operator label, not proof that a hosted model alias is immutable.
+The smoke response is not full-schema or end-to-end pipeline acceptance.

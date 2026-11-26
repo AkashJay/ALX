@@ -1,9 +1,11 @@
 """No Spark UDFs: inference happens in bounded job workers."""
 
 import json
+import os
 import re
 from dataclasses import dataclass, field
 from typing import Protocol
+from urllib.parse import urlsplit
 
 
 class ProviderError(Exception):
@@ -68,6 +70,8 @@ class MockProvider:
 
 
 class AzureProvider:
+    token_parameter = "max_completion_tokens"
+
     def __init__(
         self,
         *,
@@ -121,15 +125,21 @@ class AzureProvider:
                         "schema": self.schema,
                     },
                 },
-                max_completion_tokens=self.max_output_tokens,
+                **{self.token_parameter: self.max_output_tokens},
             )
             choice = result.choices[0]
-            if choice.message.refusal or choice.finish_reason == "content_filter":
+            if getattr(choice.message, "refusal", None) or choice.finish_reason == "content_filter":
                 raise ProviderError("REFUSED")
             if choice.finish_reason != "stop":
                 raise ProviderError("INCOMPLETE_RESPONSE")
+            content = choice.message.content
+            if isinstance(content, list):
+                content = "".join(block["text"] for block in content if block.get("type") == "text")
+            candidate = json.loads(content)
+            if not isinstance(candidate, dict):
+                raise ProviderError("INVALID_RESPONSE")
             return Response(
-                json.loads(choice.message.content),
+                candidate,
                 result.usage.model_dump() if result.usage else {},
                 result.id,
             )
@@ -145,3 +155,62 @@ class AzureProvider:
             raise ProviderError(
                 "TRANSIENT_PROVIDER_ERROR" if retry else "PROVIDER_ERROR", retryable=retry
             ) from None
+
+
+def validate_databricks_endpoint(endpoint: str) -> str:
+    """Validate before attaching a workspace credential; never accept arbitrary hosts."""
+    uri = urlsplit(endpoint)
+    host = uri.hostname or ""
+    if (
+        uri.scheme != "https"
+        or not any(
+            host.endswith(suffix)
+            for suffix in (".cloud.databricks.com", ".azuredatabricks.net", ".gcp.databricks.com")
+        )
+        or uri.username is not None
+        or uri.password is not None
+        or uri.port not in (None, 443)
+        or uri.query
+        or uri.fragment
+        or uri.path.rstrip("/") != "/ai-gateway/mlflow/v1"
+        or any(c.isspace() for c in endpoint)
+    ):
+        raise ValueError("Configure an HTTPS Databricks /ai-gateway/mlflow/v1 endpoint")
+    return endpoint.rstrip("/")
+
+
+class DatabricksProvider(AzureProvider):
+    """Dev hosted-model adapter using the same strict response and error handling."""
+
+    token_parameter = "max_tokens"
+
+    def __init__(
+        self,
+        *,
+        endpoint: str,
+        deployment: str,
+        schema: dict,
+        prompt: str,
+        taxonomy: dict,
+        max_output_tokens: int,
+        api_key: str | None = None,
+        client=None,
+    ):
+        endpoint = validate_databricks_endpoint(endpoint)
+        if client is None:
+            from openai import OpenAI
+
+            token = api_key or os.environ.get("DATABRICKS_TOKEN")
+            if not token:
+                raise ValueError("Databricks runtime authentication is required")
+            client = OpenAI(api_key=token, base_url=endpoint, max_retries=0, timeout=60)
+        super().__init__(
+            endpoint=endpoint,
+            deployment=deployment,
+            api_version="not-applicable",
+            schema=schema,
+            prompt=prompt,
+            taxonomy=taxonomy,
+            max_output_tokens=max_output_tokens,
+            client=client,
+        )

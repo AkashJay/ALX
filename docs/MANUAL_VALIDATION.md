@@ -81,3 +81,32 @@ only for this validation path (ADR-009). Supported trigger/checkpoint references
 and [streaming checkpoints](https://learn.microsoft.com/en-us/azure/databricks/structured-streaming/checkpoints).
 Real serverless notebook execution, Spark SQL and access control remain unvalidated until
 this checklist runs in your workspace. Jobs and bundle rollout come after this validation.
+
+## Optional Databricks hosted model — dev only
+
+After verifying a strict JSON smoke response in the workspace, install the package with
+`%pip install "/Workspace/<your Git folder path>[inference]"` and restart Python.
+The manual notebook passes `dbutils` to `ManualSession`; authentication is resolved only
+at enrichment from `DATABRICKS_TOKEN` or the notebook context. Never print tokens or put
+them in widgets/config/Git. If notebook context authentication is unavailable, configure
+the environment through an approved secret mechanism. No Azure identity is needed for
+this dev adapter; production still requires Azure OpenAI.
+
+Set provider=`databricks`, deployment to the exact model identifier shown by Playground
+(e.g. `system.ai.gpt-oss-120b`), endpoint to the workspace's generated HTTPS
+`/ai-gateway/mlflow/v1` base URL, deployment_revision to an explicit evaluation label
+(e.g. `gpt-oss-120b-eval-v1`). The label is not an immutable hosted model version guarantee.
+The api_version widget is unused for this provider. Use a fresh run_id and keep the same
+landing/checkpoint roots. Leave the pipeline prompt, taxonomy and output schema intact.
+
+Create a fresh session and run Bronze, Silver, interactions and requests **before** enrich.
+The expanded provenance creates new request identities and supersedes prior mock requests;
+source data does not need to be copied again. The first replay after this code update also
+changes existing identities once, even if continuing with mock. Do not remove checkpoints
+or request history. Only one writer may operate the target.
+
+Run enrich, then inspect candidate/status/attempts; run validate and inspect validation
+reasons before Gold. A normal completion and valid JSON do not prove evidence validity.
+Real outputs can enter REVIEW_REQUIRED. Confirm the full schema is accepted in the actual
+workspace; the earlier equipment-only smoke test did not test that contract. Run Gold and
+audit only after reviewing those outcomes, then verify counts and unchanged replay.

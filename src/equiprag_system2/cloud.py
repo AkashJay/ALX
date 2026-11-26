@@ -21,7 +21,14 @@ from equiprag_system2.pipelines.gold_processing.views import install
 from equiprag_system2.pipelines.interaction_processing.transform import build
 from equiprag_system2.pipelines.llm_enrichment.cloud import enrich, validate_results
 from equiprag_system2.pipelines.llm_enrichment.delta_ledger import DeltaLedger
-from equiprag_system2.pipelines.llm_enrichment.providers import AzureProvider, MockProvider
+from equiprag_system2.pipelines.llm_enrichment.provenance import build_provenance
+from equiprag_system2.pipelines.llm_enrichment.providers import (
+    AzureProvider,
+    DatabricksProvider,
+    MockProvider,
+    Provider,
+    validate_databricks_endpoint,
+)
 from equiprag_system2.pipelines.silver_processing.cloud import refresh
 
 TASKS = ("silver", "interactions", "requests", "enrich", "validate", "gold", "audit")
@@ -42,6 +49,7 @@ def execute(
     api_version: str,
     provider: str = "mock",
     manual_dev_writes: bool = False,
+    databricks_token: str | None = None,
 ) -> None:
     if task not in TASKS:
         raise ValueError("unregistered task")
@@ -59,8 +67,10 @@ def execute(
         )
     if settings.processing.dry_run:
         raise ValueError("Dry-run environment: writes disabled; approve environment config first")
-    if environment == "prod" and provider == "mock":
-        raise ValueError("Mock provider is prohibited in production")
+    if environment == "prod" and provider != "azure_openai":
+        raise ValueError("Production requires Azure OpenAI")
+    if provider == "databricks" and environment != "dev":
+        raise ValueError("Databricks hosted inference is dev-only")
     for pipeline in PIPELINES:
         pipeline_config(root, pipeline, env)
     cfg = EnrichmentSettings.model_validate(
@@ -70,8 +80,12 @@ def execute(
             "model_deployment_revision": deployment_revision,
         }
     )
-    if provider == "azure_openai" and (not deployment_revision or deployment_revision == "mock-v1"):
+    if provider != "mock" and (not deployment_revision.strip() or deployment_revision == "mock-v1"):
         raise ValueError("Explicit approved live model revision required")
+    if provider == "databricks":
+        endpoint = validate_databricks_endpoint(endpoint)
+        if not deployment.strip() or deployment == "mock":
+            raise ValueError("Configure the hosted model identifier")
     store = DeltaStore(spark, settings)
     store.initialize()
     schema = json.loads((root / "pipelines/llm_enrichment/output_schema.json").read_text())
@@ -84,21 +98,8 @@ def execute(
             + len(json.dumps(taxonomy))
         }
     )
-    provenance = {
-        k: getattr(cfg, k)
-        for k in (
-            "prompt_version",
-            "output_schema_version",
-            "taxonomy_version",
-            "model_deployment_revision",
-        )
-    }
-    provenance.update(
-        prompt_hash=digest(prompt),
-        schema_hash=digest(schema),
-        taxonomy_hash=digest(taxonomy),
-        transform_version="v1",
-        validator_version="v1",
+    provenance = build_provenance(
+        cfg, prompt, schema, taxonomy, endpoint=endpoint, api_version=api_version
     )
     started = time.time()
     try:
@@ -127,20 +128,22 @@ def execute(
                 DeltaLedger(store).reconcile(scope, episodes["interactions"], provenance)
             store.put("cursors", "enrichment_revision", provenance)
         elif task == "enrich":
-            adapter = (
-                MockProvider()
-                if provider == "mock"
-                else AzureProvider(
-                    endpoint=endpoint,
-                    deployment=deployment,
-                    api_version=api_version,
-                    schema=schema,
-                    prompt=prompt,
-                    taxonomy=taxonomy,
-                    max_output_tokens=cfg.max_output_tokens,
-                )
+            arguments = dict(
+                endpoint=endpoint,
+                deployment=deployment,
+                schema=schema,
+                prompt=prompt,
+                taxonomy=taxonomy,
+                max_output_tokens=cfg.max_output_tokens,
             )
-            enrich(store, cfg, adapter, run_id)
+            adapter: Provider
+            if provider == "mock":
+                adapter = MockProvider()
+            elif provider == "databricks":
+                adapter = DatabricksProvider(**arguments, api_key=databricks_token)
+            else:
+                adapter = AzureProvider(**arguments, api_version=api_version)
+            enrich(store, cfg, adapter, run_id, provenance=provenance)
         elif task == "validate":
             validate_results(store, run_id, schema, taxonomy)
         elif task == "gold":
