@@ -1,7 +1,9 @@
 """Typed notebook parameters and ordered manual stage invocation."""
 
+import re
 from pathlib import Path
 from typing import Literal
+from urllib.parse import urlsplit
 
 from pydantic import Field, field_validator, model_validator
 
@@ -10,6 +12,27 @@ from equiprag_system2.common.config_loader import Strict, load, quote_identifier
 from equiprag_system2.pipelines.conversation_ingestion.manual import ingest
 
 STAGES = ("bronze", *TASKS)
+
+
+def validate_storage_path(value: str) -> str:
+    value = value.rstrip("/")
+    if any(c in value for c in ("?", "#", "%", "\\")) or any(c.isspace() for c in value):
+        raise ValueError("Storage paths must not contain credentials, query strings or escapes")
+    if any(part in (".", "..") for part in value.split("/")):
+        raise ValueError("Storage path traversal is prohibited")
+    if value.startswith("/Volumes/"):
+        parts = value.split("/")
+        if len(parts) < 5 or any(not part for part in parts[2:]):
+            raise ValueError("Volume path requires catalog, schema and volume")
+        for identifier in parts[2:5]:
+            quote_identifier(identifier)
+        return value
+    uri = urlsplit(value)
+    if uri.scheme != "abfss" or not re.fullmatch(
+        r"[a-z0-9][a-z0-9-]*@[a-z0-9]+\.dfs\.core\.windows\.net", uri.netloc
+    ):
+        raise ValueError("Use a managed /Volumes/catalog/schema/volume path or ADLS Gen2 URI")
+    return value
 
 
 class ManualSettings(Strict):
@@ -32,28 +55,17 @@ class ManualSettings(Strict):
         quote_identifier(value)
         return value
 
-    @field_validator("landing_root")
-    @classmethod
-    def adls_path(cls, value: str) -> str:
-        if not value.startswith("abfss://") or "?" in value or ".." in value.split("/"):
-            raise ValueError("Provide an ADLS URI without credentials or traversal")
-        return value.rstrip("/")
-
-    @field_validator("checkpoint_root")
+    @field_validator("landing_root", "checkpoint_root")
     @classmethod
     def durable_path(cls, value: str) -> str:
-        if (
-            not value.startswith(("/Volumes/", "abfss://"))
-            or "?" in value
-            or ".." in value.split("/")
-        ):
-            raise ValueError("Use a durable UC Volume or ADLS checkpoint location")
-        return value.rstrip("/")
+        return validate_storage_path(value)
 
     @model_validator(mode="after")
     def validate_paths(self):
-        if self.checkpoint_root == self.landing_root or self.checkpoint_root.startswith(
-            self.landing_root + "/"
+        if (
+            self.checkpoint_root == self.landing_root
+            or self.checkpoint_root.startswith(self.landing_root + "/")
+            or self.landing_root.startswith(self.checkpoint_root + "/")
         ):
             raise ValueError("Checkpoint state must be outside the landing directory")
         if self.provider == "azure_openai" and (

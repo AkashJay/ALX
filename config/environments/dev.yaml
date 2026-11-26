@@ -3,3 +3,10 @@ environment: dev
 # Set ADLS_LANDING_ROOT, UC_CATALOG and Azure OpenAI deployment settings outside source control.
 processing:
   dry_run: true
+storage:
+  schemas:
+    bronze: equiprag_bronze
+    silver: equiprag_silver
+    enrichment: equiprag_enrichment
+    gold: equiprag_gold
+    ops: equiprag_ops

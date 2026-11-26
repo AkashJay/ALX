@@ -26,7 +26,7 @@ actual Azure execution is still unvalidated.
 
 ## Execution
 
-Prepare a dedicated dev catalog and approved ADLS locations. Upload the synthetic inputs
+Prepare a dev catalog with the five `equiprag_` schemas and managed volumes or approved ADLS locations. Upload the synthetic inputs
 under their feed directories as described in the guide. In the notebook, configure the
 repository path, catalog, landing location, durable checkpoint root and run ID. Explicitly
 set `allow_writes=true` to enable dev writes.

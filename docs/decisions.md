@@ -48,3 +48,12 @@ explicit durable per-feed checkpoints. Manual runtime settings are typed and sup
 notebook widgets, never committed credentials. An explicit dev-only write opt-in overrides
 dry_run for this manual session; normal job configuration remains unchanged. Do not run
 manual and declarative ingestion against the same targets/checkpoints concurrently.
+
+## ADR-010 — Free Edition manual validation storage and project schema names
+For the user's existing Free Edition workspace, permit managed Unity Catalog `/Volumes/`
+landing paths in the dev-only manual adapter alongside ADLS. Validate volume identity and
+reject traversal, credentials/query strings and overlapping input/checkpoint directories.
+Dev schema mappings use equiprag_bronze, equiprag_silver, equiprag_enrichment, equiprag_gold
+and equiprag_ops. Workspace/catalog/volume paths remain runtime parameters, not customer
+paths in source code. Production Azure ingestion remains unchanged; mock validation on
+Free Edition does not validate Azure identity, ADLS or live inference.
